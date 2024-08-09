@@ -1,0 +1,39 @@
+purchase order no ekko-ebeln
+
+base 
+
+RFC enabled FM can be called from anther system:
+
+From 420 we can call RFC FM residing in 600, through RFC destination cretaed in SM59 tcode in 420 client.In sm59, maintain the entries of destination system i.e 600.and test the connection whether it is succesful or not/ through remote logon.
+
+suppose in 420 client , in sm59 u have cretaed with destination DEST600 say.
+
+In 420, u can code as below..
+
+Call 'RSSDK_LOGSYS_REMOTE_CHECK' destination DEST600
+
+exporting
+
+I_QSYSTEMNAME =
+
+tables
+
+E_T_MSG =
+
+there exist difference between BAPI/RFC.
+
+BAPI always return messages / RFC doen't.
+
+BAPI follows ceratin naiming convetions while defineing the parameter structures ( ex BAPI_..)
+
+In bapi , no dialog screens can be called.
+
+In bapi, statements liek COmmit work/Call Transaction/Submit...shouldn't exit.
+
+Bapi's are implemented as FM's and are stored as methods in Business Object repository.
+
+another Ex for RFC
+
+RSAN_LOGSYS_DETERMINE
+
+Revert back if any issues,

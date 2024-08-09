@@ -1,0 +1,52 @@
+Attachment Report (3)
+
+The objective is to add attachment from desktop in certain tcodes. Mir4 and fb03
+
+Selection screen
+
+1 – we will take a excel file where filename and invoice number will be present and also some other fields
+
+2 – we will take folder as an input.
+
+Start of selection..
+
+1- We will read the excel file and put it in one internal table
+
+2- We read file name from the folder.. and put it in one internal table.
+
+3- Then we will cross verify that for certain invoice number depending on the filename/ if file name exist we will only upload it.
+
+select query for fetch the invoice no join it from internal table from join condition.
+BSEG- EBELN
+
+4- After validating all other fields.
+
+5- We will use 2 fm – archieve_create_table and archieve_connection_insert.
+
+6- In archieve_create_table it will provide a archieve link
+
+7- In archieve_connection_insert……. by passing the archieve link we will upload the document in the tcode.
+
+8- In this fms there are some importing parameters are there which we will pass some default values and it will be given by the functional.
+
+
+ CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
+    EXPORTING
+      filename                = v_filename      ----> File Name
+      i_begin_col             = 1
+      i_begin_row             = 1
+      i_end_col               = 256
+      i_end_row               = 65536
+    TABLES
+      intern                  = i_tab               -----> internal table
+    EXCEPTIONS
+      inconsistent_parameters = 1
+      upload_ole              = 2
+      OTHERS                  = 3.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+
+

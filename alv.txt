@@ -1,0 +1,276 @@
+REPORT ytest_program.
+
+TABLES: mara,makt.
+TYPE-POOLS: slis.
+
+* DATA PART FOR CONTAINERs and method .
+
+DATA : oref    TYPE REF TO cl_gui_custom_container,
+       oref1   TYPE REF TO cl_gui_alv_grid,
+** DATA PART FOR FEILD CATALOG.
+       wa_fcat TYPE lvc_s_fcat,
+       it_fcat TYPE TABLE OF lvc_s_fcat,
+       wa_layo TYPE slis_layout_alv.
+
+
+
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+
+SELECT-OPTIONS : s_mtart FOR mara-mtart NO INTERVALS NO-EXTENSION.
+
+SELECT-OPTIONS :s_matnr FOR mara-matnr NO INTERVALS .
+
+SELECTION-SCREEN END OF BLOCK b1.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR s_matnr-low.
+  DATA:
+    BEGIN OF it_matnr OCCURS 0,
+      matnr LIKE mara-matnr,
+    END OF it_matnr.
+
+  DATA: t_return LIKE ddshretval OCCURS 0 WITH HEADER LINE.
+
+
+  SELECT matnr  FROM mara INTO TABLE it_matnr.
+
+*         CLEAR it_matnr.
+
+*
+*         it_plants-plant = '0000'.
+*         APPEND it_plants.
+*
+*
+*         it_plants-plant = '   '.
+*         APPEND it_plants.
+*
+*
+*         SORT it_plants BY plant.
+*
+  CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+    EXPORTING
+      retfield        = 'MATNR'   "Key field from it_mara
+      dynpprog        = sy-cprog  "Program
+      dynpnr          = sy-dynnr  "Dynpro number
+      dynprofield     = 'S_MATNR' "Select-options field
+      value_org       = 'S'       "Value return: C: cell by cell,
+      "S: structured
+      display         = 'F'       "Override readiness for input
+    TABLES
+      value_tab       = it_matnr "table with selection values
+      return_tab      = t_return  "Return value
+    EXCEPTIONS
+      parameter_error = 1
+      no_values_found = 2
+      OTHERS          = 3.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+AT SELECTION-SCREEN.
+  "To check if mtart and matnr contains values or not
+  IF s_mtart IS INITIAL AND s_matnr IS INITIAL.
+    MESSAGE text-002 TYPE 'E'.
+  ENDIF.
+
+CLASS cl_event_handler DEFINITION.
+  PUBLIC SECTION.
+    METHODS : toolbar_btn FOR EVENT toolbar OF cl_gui_alv_grid
+      IMPORTING e_object
+                  e_interactive.
+
+
+ENDCLASS.
+
+
+
+
+CLASS cl_event_handler IMPLEMENTATION.
+
+  METHOD toolbar_btn.
+    DATA : ls_btn  TYPE stb_button,
+           ls_btn1 TYPE stb_button.
+
+    ls_btn-function = 'EDIT'.
+    ls_btn-icon     =  '@0Q@'.
+    ls_btn-butn_type = '1'.
+    ls_btn-text = 'EDIT'.
+    APPEND ls_btn TO e_object->mt_toolbar.
+
+    ls_btn1-function = 'SAVE'.
+    ls_btn1-icon     =  '@2L@'.
+    ls_btn1-butn_type = '1'.
+    ls_btn1-text = 'SAVE'.
+    APPEND ls_btn1 TO e_object->mt_toolbar.
+
+
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+DATA : obj TYPE REF TO cl_event_handler.
+
+
+
+START-OF-SELECTION.
+
+  SELECT
+     a~mtart,
+     a~matnr,
+     b~maktx,
+     b~spras
+    FROM mara AS a INNER JOIN makt AS b
+    ON a~matnr = b~matnr
+    INTO TABLE @DATA(it_final)
+    WHERE a~mtart IN @s_mtart
+    AND a~matnr IN @s_matnr.
+
+
+
+  IF sy-subrc <> 0.
+    MESSAGE 'No Record Found , Provide Valid Value' TYPE 'I'.
+  ENDIF.
+
+
+
+
+
+
+
+
+
+
+
+
+* FEILD CATALOG PART
+  wa_fcat-row_pos = 1.
+  wa_fcat-col_pos = 1.
+  wa_fcat-fieldname = 'MATNR'.
+  wa_fcat-tabname = 'IT_FINAL'.
+  wa_fcat-coltext = 'MATNR'.
+*    WA_FCAT-EDIT = 'X'.
+  APPEND wa_fcat TO it_fcat.
+  CLEAR wa_fcat.
+
+  wa_fcat-row_pos = 1.
+  wa_fcat-col_pos = 2.
+  wa_fcat-fieldname = 'MAKTX'.
+  wa_fcat-tabname = 'IT_FINAL'.
+  wa_fcat-coltext = 'MAKTX'.
+*    WA_FCAT-EDIT = 'X'.
+  APPEND wa_fcat TO it_fcat.
+  CLEAR wa_fcat.
+
+  wa_layo-zebra = 'X'.
+
+  CREATE OBJECT oref
+    EXPORTING
+*     PARENT         =
+      container_name = 'CONT1'.
+*      STYLE                       =
+*      LIFETIME                    = lifetime_default
+*      REPID                       =
+*      DYNNR                       =
+*      NO_AUTODEF_PROGID_DYNNR     =
+*    EXCEPTIONS
+*      CNTL_ERROR                  = 1
+*      CNTL_SYSTEM_ERROR           = 2
+*      CREATE_ERROR                = 3
+*      LIFETIME_ERROR              = 4
+*      LIFETIME_DYNPRO_DYNPRO_LINK = 5
+*      OTHERS                      = 6
+  .
+  IF sy-subrc <> 0.
+     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+              WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CREATE OBJECT oref1
+    EXPORTING
+*     I_SHELLSTYLE      = 0
+*     I_LIFETIME        =
+      i_parent = oref.
+*    I_APPL_EVENTS     = SPACE
+*    I_PARENTDBG       =
+*    I_APPLOGPARENT    =
+*    I_GRAPHICSPARENT  =
+*    I_NAME            =
+*    I_FCAT_COMPLETE   = SPACE
+*    O_PREVIOUS_SRAL_HANDLER =
+*  EXCEPTIONS
+*    ERROR_CNTL_CREATE = 1
+*    ERROR_CNTL_INIT   = 2
+*    ERROR_CNTL_LINK   = 3
+*    ERROR_DP_CREATE   = 4
+*    OTHERS            = 5
+  .
+  IF sy-subrc <> 0.
+   MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CREATE OBJECT obj.
+*
+  SET HANDLER obj->toolbar_btn FOR oref1.
+
+
+  CALL METHOD oref1->set_table_for_first_display
+    EXPORTING
+*     I_BUFFER_ACTIVE  =
+*     I_BYPASSING_BUFFER            =
+*     I_CONSISTENCY_CHECK           =
+      i_structure_name = 'IT_FINAL'
+*     IS_VARIANT       =
+*     I_SAVE           =
+*     I_DEFAULT        = 'X'
+*     IS_LAYOUT        =
+*     IS_PRINT         =
+*     IT_SPECIAL_GROUPS             =
+*     IT_TOOLBAR_EXCLUDING          =
+*     IT_HYPERLINK     =
+*     IT_ALV_GRAPHICS  =
+*     IT_EXCEPT_QINFO  =
+*     IR_SALV_ADAPTER  =
+    CHANGING
+      it_outtab        = it_final
+      it_fieldcatalog  = it_fcat.
+*    IT_SORT                       =
+*    IT_FILTER                     =
+*  EXCEPTIONS
+*    INVALID_PARAMETER_COMBINATION = 1
+*    PROGRAM_ERROR                 = 2
+*    TOO_MANY_LINES                = 3
+*    OTHERS                        = 4
+  .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+   CALL SCREEN 1001.
+
+*&---------------------------------------------------------------------*
+*& Module STATUS_1001 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+
+MODULE STATUS_1001 OUTPUT.
+SET PF-STATUS 'STATUS'.
+* SET TITLEBAR 'xxx'.
+
+ENDMODULE.
+
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_1001  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_1001 INPUT.
+  CASE sy-ucomm.
+    WHEN  'BACK'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
